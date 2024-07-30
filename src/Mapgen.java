@@ -11,11 +11,12 @@ public class Mapgen {
         map = new int[row][col];
         for (int i = 0; i < map.length; i++) {
             for (int j = 0; j < map[0].length; j++) {
-                map[i][j] = 1; // 1 indicates that this brick has not been broken
+                map[i][j] = 1;
             }
         }
-        brickWidth = 540 / col;
-        brickHeight = 150 / row;
+
+        brickWidth = 600 / col; // Adjust for new window size
+        brickHeight = 150 / row; // Adjust for new window size
     }
 
     public void draw(Graphics2D g) {

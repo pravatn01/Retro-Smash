@@ -7,114 +7,131 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private boolean play = false;
-    private boolean showMenu = true;
     private int score = 0;
-    private int totalBricks = 21;
+    private int totalBricks = 35; // Increased number of bricks
     private Timer timer;
     private int delay = 1000 / 60; // 60 FPS
 
-    private int playerX = 310;
-    private int ballposX = 120;
-    private int ballposY = 350;
-    private int ballXdir = -1;
-    private int ballYdir = -2;
+    private int playerX = 350;
+    private int ballposX = 150;
+    private int ballposY = 450;
+    private int ballXdir = -5; // Increased ball speed
+    private int ballYdir = -6; // Increased ball speed
 
     private Mapgen map;
     private boolean moveRight = false;
     private boolean moveLeft = false;
+    private String gamertag;
 
-    public Gameplay() {
-        map = new Mapgen(3, 7);
+    public Gameplay(String gamertag) {
+        this.gamertag = gamertag;
+        map = new Mapgen(5, 7); // Increased number of rows and columns
         addKeyListener(this);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
         timer = new Timer(delay, this);
         timer.start();
+    }
 
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (showMenu) {
-                    play = true;
-                    showMenu = false;
-                    repaint();
-                }
-            }
-        });
+    public void startGame() {
+        play = true;
+        repaint();
     }
 
     public void paint(Graphics g) {
-        if (showMenu) {
-            g.setColor(Color.black);
-            g.fillRect(1, 1, 692, 592);
-            g.setColor(Color.white);
-            g.setFont(new Font("Jetbrains Mono", Font.BOLD, 50));
-            g.drawString("RETRO SMASH", 150, 200);
+        // background
+        g.setColor(Color.black);
+        g.fillRect(1, 1, 800, 700);
 
-            g.setFont(new Font("Jetbrains Mono", Font.BOLD, 30));
-            g.drawString("CLICK TO PLAY", 230, 300);
+        // drawing map
+        map.draw((Graphics2D) g);
 
-            g.dispose();
-        } else {
-            // background
-            g.setColor(Color.black);
-            g.fillRect(1, 1, 692, 592);
+        // borders
+        g.setColor(Color.yellow);
+        g.fillRect(0, 0, 800, 3);
+        g.fillRect(0, 0, 3, 700);
+        g.fillRect(797, 0, 3, 700);
 
-            // drawing map
-            map.draw((Graphics2D) g);
+        // scores
+        g.setColor(Color.white);
+        g.setFont(new Font("Jetbrains Mono", Font.BOLD, 25));
+        g.drawString("SCORE: " + score, 650, 30);
 
-            // borders
-            g.setColor(Color.yellow);
-            g.fillRect(0, 0, 692, 3);
-            g.fillRect(0, 0, 3, 592);
-            g.fillRect(691, 0, 3, 592);
+        // the paddle
+        g.setColor(Color.green);
+        g.fillRect(playerX, 600, 100, 8);
 
-            // scores
-            g.setColor(Color.white);
-            g.setFont(new Font("Jetbrains Mono", Font.BOLD, 25));
-            g.drawString("SCORE: " + score, 500, 30);
+        // the ball
+        g.setColor(Color.yellow);
+        g.fillOval(ballposX, ballposY, 20, 20);
 
-            // the paddle
-            g.setColor(Color.green);
-            g.fillRect(playerX, 550, 100, 8);
-
-            // the ball
-            g.setColor(Color.yellow);
-            g.fillOval(ballposX, ballposY, 20, 20);
-
-            if (totalBricks <= 0) {
-                play = false;
-                ballXdir = 0;
-                ballYdir = 0;
-                g.setColor(Color.WHITE);
-                g.setFont(new Font("Jetbrains Mono", Font.BOLD, 30));
-                g.drawString("YOU WON", 260, 300);
-
-                g.setFont(new Font("Jetbrains Mono", Font.BOLD, 20));
-                g.drawString("PRESS ENTER TO RESTART", 230, 350);
-            }
-
-            if (ballposY > 570) {
-                play = false;
-                ballXdir = 0;
-                ballYdir = 0;
-                g.setColor(Color.white);
-                g.setFont(new Font("Jetbrains Mono", Font.BOLD, 30));
-                g.drawString("GAME OVER, SCORE: " + score, 190, 300);
-
-                g.setFont(new Font("Jetbrains Mono", Font.BOLD, 20));
-                g.drawString("Press Enter to Restart", 230, 350);
-            }
-
-            g.dispose();
+        if (totalBricks <= 0) {
+            play = false;
+            ballXdir = 0;
+            ballYdir = 0;
+            showEndGamePopup("YOU WON!");
+            saveScore(gamertag, score); // Save the score to the database
         }
+
+        if (ballposY > 670) {
+            play = false;
+            ballXdir = 0;
+            ballYdir = 0;
+            showEndGamePopup("GAME OVER, SCORE: " + score);
+            saveScore(gamertag, score); // Save the score to the database
+        }
+
+        g.dispose();
+    }
+
+    private void showEndGamePopup(String message) {
+        int option = JOptionPane.showOptionDialog(this,
+                message,
+                "Game Over",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.INFORMATION_MESSAGE,
+                null,
+                new String[] { "REPLAY", "MAIN MENU" },
+                "REPLAY");
+
+        if (option == JOptionPane.YES_OPTION) {
+            restartGame();
+        } else {
+            returnToMainMenu();
+        }
+    }
+
+    private void restartGame() {
+        play = true;
+        ballposX = 150;
+        ballposY = 450;
+        ballXdir = -5;
+        ballYdir = -6;
+        playerX = 350;
+        score = 0;
+        totalBricks = 35; // Reset number of bricks
+        map = new Mapgen(5, 7); // Reset the map
+
+        repaint();
+    }
+
+    private void returnToMainMenu() {
+        // Close the game window and show the main menu
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            new MainMenu().setVisible(true);
+            javax.swing.SwingUtilities.getWindowAncestor(this).dispose();
+        });
     }
 
     @Override
@@ -122,7 +139,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         timer.start();
 
         if (play) {
-            if (new Rectangle(ballposX, ballposY, 20, 20).intersects(new Rectangle(playerX, 550, 100, 8))) {
+            if (new Rectangle(ballposX, ballposY, 20, 20).intersects(new Rectangle(playerX, 600, 100, 8))) {
                 ballYdir = -ballYdir;
             }
 
@@ -163,22 +180,22 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             if (ballposY < 0) {
                 ballYdir = -ballYdir;
             }
-            if (ballposX > 670) {
+            if (ballposX > 780) {
                 ballXdir = -ballXdir;
             }
 
             if (moveRight) {
-                if (playerX >= 600) {
-                    playerX = 600;
+                if (playerX >= 700) {
+                    playerX = 700;
                 } else {
-                    playerX += 5;
+                    playerX += 15; // Increased paddle speed
                 }
             }
             if (moveLeft) {
                 if (playerX < 10) {
                     playerX = 10;
                 } else {
-                    playerX -= 5;
+                    playerX -= 15; // Increased paddle speed
                 }
             }
 
@@ -200,17 +217,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         }
         if (e.getKeyCode() == KeyEvent.VK_ENTER) {
             if (!play) {
-                play = true;
-                ballposX = 120;
-                ballposY = 350;
-                ballXdir = -1;
-                ballYdir = -2;
-                playerX = 310;
-                score = 0;
-                totalBricks = 21;
-                map = new Mapgen(3, 7);
-
-                repaint();
+                restartGame();
             }
         }
     }
@@ -225,13 +232,16 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         }
     }
 
-    public void moveRight() {
-        play = true;
-        playerX += 20;
-    }
-
-    public void moveLeft() {
-        play = true;
-        playerX -= 20;
+    private void saveScore(String gamertag, int score) {
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/retro_smash", "root",
+                "root");
+                PreparedStatement ps = conn
+                        .prepareStatement("INSERT INTO leaderboard (gamertag, score) VALUES (?, ?)")) {
+            ps.setString(1, gamertag);
+            ps.setInt(2, score);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }
