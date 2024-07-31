@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.*;
 
@@ -8,24 +9,31 @@ public class Leaderboard {
         frame.setSize(400, 400);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        DefaultListModel<String> listModel = new DefaultListModel<>();
-        JList<String> list = new JList<>(listModel);
+        String[] columnNames = { "Gamertag", "Score" };
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+        JTable table = new JTable(tableModel);
 
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/retro_smash", "root",
-                "root");
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/retro_smash", "root", "root");
                 Statement stmt = conn.createStatement()) {
 
             String query = "SELECT gamertag, score FROM leaderboard ORDER BY score DESC LIMIT 10";
             ResultSet rs = stmt.executeQuery(query);
             while (rs.next()) {
-                String entry = rs.getString("gamertag") + " - " + rs.getInt("score");
-                listModel.addElement(entry);
+                String gamertag = rs.getString("gamertag");
+                int score = rs.getInt("score");
+                tableModel.addRow(new Object[] { gamertag, score });
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        frame.add(new JScrollPane(list));
+        JScrollPane scrollPane = new JScrollPane(table);
+        frame.add(scrollPane, BorderLayout.CENTER);
+
         frame.setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(Leaderboard::showLeaderboard);
     }
 }

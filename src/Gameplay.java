@@ -7,11 +7,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.geom.RoundRectangle2D;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -22,17 +23,20 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private int totalBricks = 35; // Increased number of bricks
     private Timer timer;
     private int delay = 1000 / 60; // 60 FPS
+    private int timeLeft = 30; // Timer for 30 seconds
+    private Timer countdownTimer; // Timer for countdown
 
     private int playerX = 350;
     private int ballposX = 150;
     private int ballposY = 450;
-    private int ballXdir = -5; // Increased ball speed
+    private int ballXdir = -6; // Increased ball speed
     private int ballYdir = -6; // Increased ball speed
 
     private Mapgen map;
     private boolean moveRight = false;
     private boolean moveLeft = false;
     private String gamertag;
+    private int paddleWidth = 70; // Smaller paddle width
 
     public Gameplay(String gamertag) {
         this.gamertag = gamertag;
@@ -42,11 +46,31 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         setFocusTraversalKeysEnabled(false);
         timer = new Timer(delay, this);
         timer.start();
+        startCountdown();
     }
 
     public void startGame() {
         play = true;
         repaint();
+    }
+
+    public void startCountdown() {
+        countdownTimer = new Timer(1000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (play) {
+                    timeLeft--;
+                    if (timeLeft <= 0) {
+                        play = false;
+                        countdownTimer.stop();
+                        showEndGamePopup("TIME'S UP! SCORE: " + score);
+                        saveScore(gamertag, score); // Save the score to the database
+                    }
+                    repaint();
+                }
+            }
+        });
+        countdownTimer.start();
     }
 
     public void paint(Graphics g) {
@@ -68,26 +92,22 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         g.setFont(new Font("Jetbrains Mono", Font.BOLD, 25));
         g.drawString("SCORE: " + score, 650, 30);
 
+        // timer
+        g.drawString("TIMER: " + timeLeft, 50, 30);
+
         // the paddle
         g.setColor(Color.green);
-        g.fillRect(playerX, 600, 100, 8);
+        ((Graphics2D) g).fill(new RoundRectangle2D.Double(playerX, 600, paddleWidth, 8, 10, 10)); // Rounded corners
 
         // the ball
         g.setColor(Color.yellow);
         g.fillOval(ballposX, ballposY, 20, 20);
 
-        if (totalBricks <= 0) {
-            play = false;
-            ballXdir = 0;
-            ballYdir = 0;
-            showEndGamePopup("YOU WON!");
-            saveScore(gamertag, score); // Save the score to the database
-        }
-
         if (ballposY > 670) {
             play = false;
             ballXdir = 0;
             ballYdir = 0;
+            countdownTimer.stop();
             showEndGamePopup("GAME OVER, SCORE: " + score);
             saveScore(gamertag, score); // Save the score to the database
         }
@@ -96,20 +116,16 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     }
 
     private void showEndGamePopup(String message) {
-        int option = JOptionPane.showOptionDialog(this,
+        JOptionPane.showOptionDialog(this,
                 message,
                 "Game Over",
-                JOptionPane.YES_NO_OPTION,
+                JOptionPane.DEFAULT_OPTION,
                 JOptionPane.INFORMATION_MESSAGE,
                 null,
-                new String[] { "REPLAY", "MAIN MENU" },
-                "REPLAY");
+                new String[] { "MAIN MENU" },
+                "MAIN MENU");
 
-        if (option == JOptionPane.YES_OPTION) {
-            restartGame();
-        } else {
-            returnToMainMenu();
-        }
+        returnToMainMenu();
     }
 
     private void restartGame() {
@@ -122,6 +138,8 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         score = 0;
         totalBricks = 35; // Reset number of bricks
         map = new Mapgen(5, 7); // Reset the map
+        timeLeft = 30; // Reset the timer
+        startCountdown();
 
         repaint();
     }
@@ -139,10 +157,19 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         timer.start();
 
         if (play) {
-            if (new Rectangle(ballposX, ballposY, 20, 20).intersects(new Rectangle(playerX, 600, 100, 8))) {
-                ballYdir = -ballYdir;
+            // Ball and paddle collision detection
+            RoundRectangle2D paddle = new RoundRectangle2D.Double(playerX, 600, paddleWidth, 8, 10, 10);
+            Rectangle ball = new Rectangle(ballposX, ballposY, 20, 20);
+
+            if (paddle.intersects(ball)) {
+                if (ballposX + 19 >= paddle.getX() && ballposX <= paddle.getX() + paddle.getWidth()) {
+                    ballYdir = -ballYdir;
+                } else if (ballposX + 19 <= paddle.getX() || ballposX >= paddle.getX() + paddle.getWidth()) {
+                    ballXdir = -ballXdir;
+                }
             }
 
+            // Brick collision detection and response
             A: for (int i = 0; i < map.map.length; i++) {
                 for (int j = 0; j < map.map[0].length; j++) {
                     if (map.map[i][j] > 0) {
@@ -151,15 +178,14 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                         int brickWidth = map.brickWidth;
                         int brickHeight = map.brickHeight;
 
-                        Rectangle rect = new Rectangle(brickX, brickY, brickWidth, brickHeight);
-                        Rectangle ballRect = new Rectangle(ballposX, ballposY, 20, 20);
-                        Rectangle brickRect = rect;
+                        Rectangle brickRect = new Rectangle(brickX, brickY, brickWidth, brickHeight);
 
-                        if (ballRect.intersects(brickRect)) {
+                        if (ball.intersects(brickRect)) {
                             map.setBrickValue(0, i, j);
                             totalBricks--;
                             score += 5;
 
+                            // Ball collision with brick
                             if (ballposX + 19 <= brickRect.x || ballposX + 1 >= brickRect.x + brickRect.width) {
                                 ballXdir = -ballXdir;
                             } else {
@@ -172,21 +198,22 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 }
             }
 
+            // Ball movement
             ballposX += ballXdir;
             ballposY += ballYdir;
-            if (ballposX < 0) {
+
+            // Ball and wall collision detection
+            if (ballposX < 0 || ballposX > 780) {
                 ballXdir = -ballXdir;
             }
             if (ballposY < 0) {
                 ballYdir = -ballYdir;
             }
-            if (ballposX > 780) {
-                ballXdir = -ballXdir;
-            }
 
+            // Player paddle movement
             if (moveRight) {
-                if (playerX >= 700) {
-                    playerX = 700;
+                if (playerX >= 740 - paddleWidth) {
+                    playerX = 740 - paddleWidth;
                 } else {
                     playerX += 15; // Increased paddle speed
                 }
@@ -199,6 +226,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 }
             }
 
+            // Repaint the game elements
             repaint();
         }
     }
@@ -233,13 +261,28 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     }
 
     private void saveScore(String gamertag, int score) {
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/retro_smash", "root",
-                "root");
-                PreparedStatement ps = conn
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/retro_smash", "root", "root");
+                PreparedStatement psSelect = conn.prepareStatement("SELECT score FROM leaderboard WHERE gamertag = ?");
+                PreparedStatement psUpdate = conn
+                        .prepareStatement("UPDATE leaderboard SET score = ? WHERE gamertag = ?");
+                PreparedStatement psInsert = conn
                         .prepareStatement("INSERT INTO leaderboard (gamertag, score) VALUES (?, ?)")) {
-            ps.setString(1, gamertag);
-            ps.setInt(2, score);
-            ps.executeUpdate();
+
+            psSelect.setString(1, gamertag);
+            ResultSet rs = psSelect.executeQuery();
+
+            if (rs.next()) {
+                int existingScore = rs.getInt("score");
+                if (score > existingScore) {
+                    psUpdate.setInt(1, score);
+                    psUpdate.setString(2, gamertag);
+                    psUpdate.executeUpdate();
+                }
+            } else {
+                psInsert.setString(1, gamertag);
+                psInsert.setInt(2, score);
+                psInsert.executeUpdate();
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
