@@ -218,14 +218,14 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 if (playerX >= 740 - paddleWidth) {
                     playerX = 740 - paddleWidth;
                 } else {
-                    playerX += 13; // Increased paddle speed
+                    playerX += 10; // Increased paddle speed
                 }
             }
             if (moveLeft) {
                 if (playerX < 10) {
                     playerX = 10;
                 } else {
-                    playerX -= 13; // Increased paddle speed
+                    playerX -= 10; // Increased paddle speed
                 }
             }
 
