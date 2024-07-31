@@ -16,8 +16,6 @@ import java.sql.SQLException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
-import javazoom.jl.decoder.BitstreamException;
-import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 
 public class Gameplay extends JPanel implements KeyListener, ActionListener {
