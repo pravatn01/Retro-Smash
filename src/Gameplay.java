@@ -16,6 +16,9 @@ import java.sql.SQLException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
+import javazoom.jl.decoder.BitstreamException;
+import javazoom.jl.decoder.JavaLayerException;
+import javazoom.jl.player.advanced.AdvancedPlayer;
 
 public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private boolean play = false;
@@ -29,14 +32,15 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
     private int playerX = 350;
     private int ballposX = 150;
     private int ballposY = 450;
-    private int ballXdir = -6; // Increased ball speed
-    private int ballYdir = -6; // Increased ball speed
+    private int ballXdir = -4; // Increased ball speed
+    private int ballYdir = -4; // Increased ball speed
 
     private Mapgen map;
     private boolean moveRight = false;
     private boolean moveLeft = false;
     private String gamertag;
-    private int paddleWidth = 70; // Smaller paddle width
+    private int paddleWidth = 80; // Smaller paddle width
+    private MusicPlayer musicPlayer;
 
     public Gameplay(String gamertag) {
         this.gamertag = gamertag;
@@ -47,10 +51,12 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         timer = new Timer(delay, this);
         timer.start();
         startCountdown();
+        musicPlayer = new MusicPlayer();
     }
 
     public void startGame() {
         play = true;
+        musicPlayer.play("resources/musicfile.mp3"); // Adjust the path as needed
         repaint();
     }
 
@@ -73,7 +79,9 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         countdownTimer.start();
     }
 
+    @Override
     public void paint(Graphics g) {
+        super.paint(g); // Call the superclass's paint method
         // background
         g.setColor(Color.black);
         g.fillRect(1, 1, 800, 700);
@@ -124,7 +132,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 null,
                 new String[] { "MAIN MENU" },
                 "MAIN MENU");
-
+        musicPlayer.stop(); // Stop background music
         returnToMainMenu();
     }
 
@@ -140,12 +148,11 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         map = new Mapgen(5, 7); // Reset the map
         timeLeft = 30; // Reset the timer
         startCountdown();
-
+        musicPlayer.play("resources/musicfile.mp3"); // Adjust the path as needed
         repaint();
     }
 
     private void returnToMainMenu() {
-        // Close the game window and show the main menu
         javax.swing.SwingUtilities.invokeLater(() -> {
             new MainMenu().setVisible(true);
             javax.swing.SwingUtilities.getWindowAncestor(this).dispose();
@@ -154,8 +161,6 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        timer.start();
-
         if (play) {
             // Ball and paddle collision detection
             RoundRectangle2D paddle = new RoundRectangle2D.Double(playerX, 600, paddleWidth, 8, 10, 10);
@@ -215,14 +220,14 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
                 if (playerX >= 740 - paddleWidth) {
                     playerX = 740 - paddleWidth;
                 } else {
-                    playerX += 15; // Increased paddle speed
+                    playerX += 13; // Increased paddle speed
                 }
             }
             if (moveLeft) {
                 if (playerX < 10) {
                     playerX = 10;
                 } else {
-                    playerX -= 15; // Increased paddle speed
+                    playerX -= 13; // Increased paddle speed
                 }
             }
 
@@ -272,19 +277,54 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
             ResultSet rs = psSelect.executeQuery();
 
             if (rs.next()) {
-                int existingScore = rs.getInt("score");
-                if (score > existingScore) {
-                    psUpdate.setInt(1, score);
-                    psUpdate.setString(2, gamertag);
-                    psUpdate.executeUpdate();
-                }
+                // Update existing record
+                psUpdate.setInt(1, score);
+                psUpdate.setString(2, gamertag);
+                psUpdate.executeUpdate();
             } else {
+                // Insert new record
                 psInsert.setString(1, gamertag);
                 psInsert.setInt(2, score);
                 psInsert.executeUpdate();
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    private class MusicPlayer {
+        private AdvancedPlayer player;
+        private java.io.InputStream inputStream;
+
+        public void play(String filePath) {
+            System.out.println("Attempting to play file at: " + filePath);
+            new Thread(() -> {
+                try {
+                    inputStream = new java.io.FileInputStream(filePath);
+                    player = new AdvancedPlayer(inputStream);
+                    player.play();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        if (inputStream != null) {
+                            inputStream.close();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+
+        public void stop() {
+            try {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }
