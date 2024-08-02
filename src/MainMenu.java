@@ -12,6 +12,7 @@ public class MainMenu extends JFrame implements ActionListener {
         setSize(800, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
+        setLocationRelativeTo(null);
 
         JPanel panel = new JPanel();
         panel.setLayout(null);
@@ -47,6 +48,7 @@ public class MainMenu extends JFrame implements ActionListener {
                 gameFrame.setBounds(10, 10, 814, 700);
                 gameFrame.setTitle("RETRO SMASH");
                 gameFrame.setResizable(false);
+                gameFrame.setLocationRelativeTo(null);
                 gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 gameFrame.add(gamePlay);
                 gameFrame.setVisible(true);

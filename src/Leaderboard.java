@@ -8,6 +8,7 @@ public class Leaderboard {
         JFrame frame = new JFrame("Leaderboard");
         frame.setSize(400, 400);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
 
         String[] columnNames = { "Gamertag", "Score" };
         DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
