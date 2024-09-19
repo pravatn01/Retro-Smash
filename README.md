@@ -19,7 +19,7 @@
 1. Clone the repository:
    
    ```bash
-   git clone https://github.com/username/retro-smash.git
+   git clone https://github.com/pravatn01/Retro-Smash.git
 
 3. To set up the database for **Retro Smash**, follow these steps:
 
@@ -27,7 +27,7 @@
 - Load the provided SQL file (`Required.sql`) from the repository to create the necessary database and leaderboard table:
   
    ```bash
-   SOURCE /path_to_repository/Required.sql;
+   SOURCE /https://github.com/pravatn01/Retro-Smash/resources/Required.sql;
    
 3. Compile and run the game:
    
