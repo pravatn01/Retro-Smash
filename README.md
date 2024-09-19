@@ -1,18 +1,27 @@
-## Getting Started
+# Retro Smash 🎮
 
-Welcome to the VS Code Java world. Here is a guideline to help you get started to write Java code in Visual Studio Code.
+**Retro Smash** is a classic-inspired arcade game where players control a paddle to bounce a ball and break bricks. It combines nostalgic gameplay elements with modern features like a dynamic leaderboard, immersive sound effects, and smooth game mechanics. Developed as part of a 4th-semester project for the Bachelor of Information Technology (BIT) degree at KIST College of Information Technology, **Retro Smash** is a tribute to old-school arcade gaming with a modern twist.
 
-## Folder Structure
+## Features 🌟
+- **Classic Gameplay:** Control the paddle and smash through bricks with increasing difficulty.
+- **Dynamic Leaderboard:** Compete with others by submitting your high scores to a local database.
+- **Music and Sound Effects:** Enjoy an immersive experience with background music during gameplay.
+- **Responsive UI:** Smooth 60 FPS gameplay with visually appealing rounded paddle and collision mechanics.
+- **Brick Collision:** Ball-bounces, and brick breaking mechanics offer a fun and challenging arcade experience.
 
-The workspace contains two folders by default, where:
+## Future Enhancements 🚀
+- **Multiplayer Mode:** Introduce real-time competitive gameplay.
+- **Power-ups & Levels:** Add new levels and special power-ups to keep the game fresh.
+- **Social Media Integration:** Share scores and achievements online.
+- **Improved Graphics:** Further polish the graphics using advanced libraries.
+  
+## Getting Started 🛠️
+### Prerequisites
+- **Java 8** or later installed
+- **MySQL** for leaderboard management
 
-- `src`: the folder to maintain sources
-- `lib`: the folder to maintain dependencies
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/username/retro-smash.git
 
-Meanwhile, the compiled output files will be generated in the `bin` folder by default.
-
-> If you want to customize the folder structure, open `.vscode/settings.json` and update the related settings there.
-
-## Dependency Management
-
-The `JAVA PROJECTS` view allows you to manage your dependencies. More details can be found [here](https://github.com/microsoft/vscode-java-dependency#manage-dependencies).
