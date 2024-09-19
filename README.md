@@ -9,11 +9,6 @@
 - **Responsive UI:** Smooth 60 FPS gameplay with visually appealing rounded paddle and collision mechanics.
 - **Brick Collision:** Ball-bounces, and brick breaking mechanics offer a fun and challenging arcade experience.
 
-## Future Enhancements 🚀
-- **Multiplayer Mode:** Introduce real-time competitive gameplay.
-- **Power-ups & Levels:** Add new levels and special power-ups to keep the game fresh.
-- **Social Media Integration:** Share scores and achievements online.
-- **Improved Graphics:** Further polish the graphics using advanced libraries.
   
 ## Getting Started 🛠️
 ### Prerequisites
@@ -22,6 +17,32 @@
 
 ### Installation
 1. Clone the repository:
+   
    ```bash
    git clone https://github.com/username/retro-smash.git
 
+3. To set up the database for **Retro Smash**, follow these steps:
+
+- Open your MySQL client or MySQL Workbench.
+- Load the provided SQL file (`Required.sql`) from the repository to create the necessary database and leaderboard table:
+  
+   ```bash
+   SOURCE /path_to_repository/Required.sql;
+   
+3. Compile and run the game:
+   
+   ```bash
+   javac App.java
+   java App
+## How to Play 🎯
+
+- Use the **LEFT** and **RIGHT** arrow keys to move the paddle.
+- Break all the bricks by bouncing the ball with the paddle.
+- The game ends when the ball touches the bottom or when the timer runs out.
+- Your score is saved to the leaderboard upon game completion.
+
+## Contributors ✨
+
+- Deepak Shes BK
+- Pawan Thapa
+- Pravat Nagarkoti
